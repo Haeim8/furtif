@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FURTIF — Car · Wash · Light</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#F4F2ED;            /* bone */
+    --bg-2:#EDEAE3;
+    --ink:#0A0A0A;           /* deep black */
+    --ink-2:#1a1a1a;
+    --mute:#8A8A85;
+    --line:#0A0A0A1a;
+    --accent:#D4412A;        /* brique sourde */
+    --night:#05070B;
+    --star:#F6E7B2;
+    --sans:"Inter Tight", ui-sans-serif, system-ui, sans-serif;
+    --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body{min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  ::selection{background:var(--ink);color:var(--bg)}
+
+  /* ——— Fixed chrome ——— */
+  .chrome{
+    position:fixed;inset:0 0 auto 0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;mix-blend-mode:difference;color:#F4F2ED;
+    pointer-events:none;
+  }
+  .chrome > *{pointer-events:auto}
+  .mark{font-family:var(--sans);font-weight:800;font-size:18px;letter-spacing:.24em}
+  .mark .dot{display:inline-block;width:6px;height:6px;background:currentColor;border-radius:50%;margin-left:6px;vertical-align:2px}
+  .nav{display:flex;gap:28px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+  .nav a{opacity:.65;transition:opacity .2s}
+  .nav a:hover,.nav a.active{opacity:1}
+  .nav a .num{opacity:.5;margin-right:6px}
+
+  .side-index{
+    position:fixed;left:28px;bottom:28px;z-index:40;
+    font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);
+  }
+  .side-index .row{display:flex;gap:12px;align-items:center;margin-top:6px}
+  .side-index .bar{width:24px;height:1px;background:currentColor;opacity:.35}
+  .side-index.dark{color:#F4F2ED}
+
+  .scroll-hint{
+    position:fixed;right:28px;bottom:28px;z-index:40;
+    font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    display:flex;align-items:center;gap:10px
+  }
+  .scroll-hint .tick{width:1px;height:24px;background:currentColor;animation:tick 2s ease-in-out infinite}
+  @keyframes tick{0%,100%{transform:scaleY(.2);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}}
+
+  /* ——— Generic layout ——— */
+  .act{position:relative;min-height:100vh;padding:120px 48px 80px;overflow:hidden}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute)}
+  .num-tag{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mute)}
+
+  .display{
+    font-family:var(--sans);font-weight:500;letter-spacing:-.04em;line-height:.9;
+    font-size:clamp(64px, 14vw, 220px);
+  }
+  .display.italic{font-style:italic;font-weight:400}
+  .display em{font-style:italic;font-weight:400;color:var(--mute)}
+
+  .grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:24px}
+
+  /* ——— HERO (v2) ——— */
+  .hero{min-height:100vh;padding:96px 28px 28px;position:relative;display:flex;align-items:stretch}
+  .hero-grid{
+    flex:1;display:grid;grid-template-columns:180px 1fr 220px;gap:32px;
+    border:1px solid var(--line);padding:36px;background:var(--bg);
+    position:relative
+  }
+  .hero-grid::before,.hero-grid::after{
+    content:"";position:absolute;width:10px;height:10px;border:1px solid var(--ink);background:var(--bg)
+  }
+  .hero-grid::before{top:-6px;left:-6px}
+  .hero-grid::after{bottom:-6px;right:-6px}
+  .hero-side{display:flex;flex-direction:column;justify-content:space-between}
+  .hero-side .eyebrow{writing-mode:vertical-rl;transform:rotate(180deg);align-self:flex-start}
+  .hero-side-bottom{display:flex;flex-direction:column;gap:18px}
+  .tick-line{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--mute)}
+  .tick-line .ln{width:40px;height:1px;background:var(--ink)}
+  .meta-lines{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);line-height:1.9}
+  .meta-lines b{color:var(--ink);font-weight:500}
+
+  .hero-main{display:flex;flex-direction:column;justify-content:space-between;gap:48px}
+  .hero-title{
+    font-weight:500;letter-spacing:-.055em;line-height:.82;
+    display:flex;flex-direction:column;gap:4px
+  }
+  .hero-title .w1{font-size:clamp(88px,15vw,220px)}
+  .hero-title .w1 .slash{color:var(--accent)}
+  .hero-title .w2{font-size:clamp(44px,6vw,88px);font-style:italic;font-weight:300;color:var(--mute);padding-left:8%}
+  .hero-title .w3{font-size:clamp(88px,15vw,220px);padding-left:18%}
+  .hero-title .w2 em{font-style:italic}
+
+  .hero-services{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line)}
+  .hs{
+    display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:4px 12px;
+    padding:22px 20px 22px 0;border-right:1px solid var(--line);position:relative;
+    transition:padding .3s, background .3s
+  }
+  .hs:last-child{border-right:none}
+  .hs:not(:first-child){padding-left:20px}
+  .hs-n{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--mute);grid-row:1;grid-column:1}
+  .hs-name{font-family:var(--sans);font-size:22px;font-weight:500;letter-spacing:-.02em;grid-row:1;grid-column:2}
+  .hs-sub{grid-row:2;grid-column:1/3;font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.04em}
+  .hs-arr{grid-row:1/3;grid-column:3;align-self:center;font-family:var(--sans);font-size:20px;color:var(--mute);transition:transform .3s, color .2s}
+  .hs:hover{background:var(--ink);color:var(--bg)}
+  .hs:hover .hs-n, .hs:hover .hs-sub{color:#aaa}
+  .hs:hover .hs-arr{color:var(--bg);transform:translateX(6px)}
+
+  .hero-side.right{align-items:flex-end;text-align:right;gap:28px;justify-content:space-between}
+  .coord{font-family:var(--mono)}
+  .coord .k{font-size:10px;letter-spacing:.22em;color:var(--mute)}
+  .coord .v{font-size:13px;color:var(--ink);margin-top:6px;letter-spacing:.08em;line-height:1.5}
+  .live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px;box-shadow:0 0 0 3px #D4412A22;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 6px #D4412A11}}
+
+  /* ——— ACT CAR: showroom ——— */
+  #act-car{background:linear-gradient(180deg,var(--bg) 0%, #E8E4DB 100%);padding:140px 48px 120px}
+  .showroom{
+    position:relative;display:grid;grid-template-columns:1fr 2fr 1fr;gap:24px;align-items:center;
+    min-height:72vh
+  }
+  .showroom .stage{
+    position:relative;aspect-ratio:16/10;background:radial-gradient(ellipse at 50% 95%, #0A0A0A18 0%, transparent 60%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .showroom .turntable{
+    width:86%;aspect-ratio:16/9;position:relative;
+    background:
+      radial-gradient(ellipse at center, #0A0A0A0d, transparent 70%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  /* placeholder voiture — ombre + silhouette SVG simple (interdit d'inventer du SVG complexe) */
+  .car-shadow{position:absolute;bottom:6%;left:10%;right:10%;height:10%;background:radial-gradient(ellipse at center, #0A0A0A33 0%, transparent 70%);filter:blur(6px)}
+  .car-plate{
+    position:relative;width:72%;aspect-ratio:5/2;
+    background:repeating-linear-gradient(135deg,#0A0A0A08 0 2px, transparent 2px 10px), #EDEAE3;
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;color:var(--mute);font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    transform:perspective(800px) rotateY(-6deg);
+    transition:transform .6s cubic-bezier(.2,.7,.2,1);
+  }
+  .car-plate::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,#0A0A0A11,transparent)}
+  .turntable-ring{
+    position:absolute;inset:auto 0 -4% 0;height:40%;border-radius:50%;
+    border:1px dashed #0A0A0A33;
+    transform:scaleY(.18) translateY(30%);
+    animation:spin 24s linear infinite;
+  }
+  @keyframes spin{to{transform:scaleY(.18) translateY(30%) rotate(360deg)}}
+
+  .spec-col{display:flex;flex-direction:column;gap:28px}
+  .spec{border-top:1px solid var(--line);padding-top:10px}
+  .spec .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+  .spec .v{font-family:var(--sans);font-weight:500;font-size:28px;letter-spacing:-.02em;margin-top:4px}
+  .spec .v small{font-family:var(--mono);font-size:12px;color:var(--mute);font-weight:400;margin-left:4px}
+
+  .showroom-left{display:flex;flex-direction:column;gap:20px}
+  .model-list{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line)}
+  .model-list button{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 0;border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);
+    text-align:left;transition:color .2s, padding .3s
+  }
+  .model-list button .n{display:inline-block;width:28px}
+  .model-list button.active{color:var(--ink);padding-left:10px}
+  .model-list button:hover{color:var(--ink)}
+  .model-list button .arrow{opacity:0;transition:opacity .2s}
+  .model-list button.active .arrow{opacity:1}
+
+  .rotator{display:flex;align-items:center;gap:14px;margin-top:10px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+  .rotator .track{flex:1;height:1px;background:var(--line);position:relative}
+  .rotator .track::after{content:"";position:absolute;inset:0;background:var(--ink);width:var(--p,40%);transition:width 1.2s linear}
+  .rotator button{width:28px;height:28px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center}
+
+  .car-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:48px}
+  .car-head h2{font-size:clamp(54px,8vw,120px);font-weight:500;letter-spacing:-.04em;line-height:.9}
+  .car-head h2 em{font-style:italic;color:var(--mute);font-weight:400}
+
+  /* ——— ACT WASH ——— */
+  #act-wash{background:#0B0C0E;color:#F4F2ED;padding:160px 48px 140px;position:relative}
+  #act-wash::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(1200px 600px at 80% 20%, #1a3a6033 0%, transparent 60%),
+      radial-gradient(800px 400px at 20% 80%, #2a4a7022 0%, transparent 60%);
+  }
+  .wash-head{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:2;margin-bottom:80px}
+  .wash-head h2{font-size:clamp(64px,11vw,180px);font-weight:500;letter-spacing:-.05em;line-height:.85}
+  .wash-head h2 em{font-style:italic;font-weight:300;color:#8A8A85}
+  .wash-head .meta{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85;text-align:right;line-height:2}
+  .wash-head .meta b{color:#F4F2ED;font-weight:500}
+
+  .wash-wall{
+    position:relative;z-index:2;
+    display:grid;grid-template-columns:2fr 3fr;gap:48px;min-height:60vh
+  }
+  .wash-menu{display:flex;flex-direction:column;gap:2px;border-top:1px solid #ffffff1a}
+  .wash-menu button{
+    display:grid;grid-template-columns:32px 1fr auto;gap:18px;align-items:center;
+    padding:22px 0;border-bottom:1px solid #ffffff1a;text-align:left;
+    transition:padding .3s, color .2s;color:#F4F2ED;
+    font-family:var(--sans)
+  }
+  .wash-menu button .idx{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:#6a6a6a}
+  .wash-menu button .name{font-size:24px;font-weight:500;letter-spacing:-.01em}
+  .wash-menu button .name small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85;font-weight:400;margin-top:4px}
+  .wash-menu button .price{font-family:var(--mono);font-size:14px;color:#8A8A85}
+  .wash-menu button:hover{padding-left:14px;color:#fff}
+  .wash-menu button.active{padding-left:14px;color:#fff;background:linear-gradient(90deg,#ffffff08,transparent)}
+  .wash-menu button.active .idx{color:#F4F2ED}
+
+  .wash-preview{
+    position:relative;aspect-ratio:4/3;background:#000;overflow:hidden;
+    border:1px solid #ffffff14;
+  }
+  .wash-preview .scan{
+    position:absolute;inset:0;
+    background:
+      repeating-linear-gradient(180deg,#0ea5e80a 0 2px,transparent 2px 6px);
+  }
+  .wash-preview .car-silhouette{
+    position:absolute;inset:auto 10% 14% 10%;height:50%;
+    background:linear-gradient(180deg,#1a1a1a,#0a0a0a);
+    clip-path:polygon(0 100%,6% 60%,20% 40%,34% 10%,64% 10%,80% 40%,94% 60%,100% 100%);
+    box-shadow:0 40px 80px #00000088;
+  }
+  .wash-preview .water{
+    position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(circle at 20% 20%,#ffffff33,transparent 8%),
+      radial-gradient(circle at 60% 30%,#ffffff22,transparent 6%),
+      radial-gradient(circle at 80% 60%,#ffffff2a,transparent 7%),
+      radial-gradient(circle at 30% 70%,#ffffff22,transparent 5%);
+    opacity:0;transition:opacity .6s;
+  }
+  .wash-preview.active .water{opacity:1}
+  .wash-preview .foam{
+    position:absolute;inset:-20% -40%;height:140%;
+    background:radial-gradient(ellipse at center,#ffffff,#ffffffaa 30%,transparent 60%);
+    filter:blur(20px);opacity:0;transform:translateX(-120%);
+    transition:transform 1.4s cubic-bezier(.2,.8,.2,1), opacity .4s;
+  }
+  .wash-preview.sweep .foam{opacity:.6;transform:translateX(120%)}
+  .wash-preview .hud{
+    position:absolute;left:16px;right:16px;bottom:16px;
+    display:flex;justify-content:space-between;align-items:end;
+    font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#F4F2ED;
+  }
+  .wash-preview .hud .bars{display:flex;gap:3px}
+  .wash-preview .hud .bars span{width:3px;height:18px;background:#F4F2ED33}
+  .wash-preview .hud .bars span.on{background:#F4F2ED}
+  .wash-preview .corner{position:absolute;width:24px;height:24px;border:1px solid #F4F2ED66}
+  .wash-preview .tl{top:10px;left:10px;border-right:none;border-bottom:none}
+  .wash-preview .tr{top:10px;right:10px;border-left:none;border-bottom:none}
+  .wash-preview .bl{bottom:10px;left:10px;border-right:none;border-top:none}
+  .wash-preview .br{bottom:10px;right:10px;border-left:none;border-top:none}
+
+  .wash-details{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:64px;position:relative;z-index:2}
+  .wash-details .det{border-top:1px solid #ffffff1a;padding-top:14px}
+  .wash-details .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85}
+  .wash-details .v{font-size:22px;font-weight:500;margin-top:6px;letter-spacing:-.01em}
+  .wash-details .v small{display:block;font-family:var(--mono);font-size:11px;color:#8A8A85;margin-top:4px;font-weight:400;letter-spacing:.1em}
+
+  /* ——— ACT LIGHT ——— */
+  #act-light{background:var(--night);color:#F4F2ED;padding:160px 48px 140px;position:relative;overflow:hidden}
+  #act-light .stars{position:absolute;inset:0;pointer-events:none}
+  #act-light .stars i{
+    position:absolute;width:2px;height:2px;background:var(--star);border-radius:50%;
+    box-shadow:0 0 6px var(--star), 0 0 12px #f6e7b266;
+    opacity:.8;animation:twinkle 4s ease-in-out infinite
+  }
+  @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+
+  .light-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:80px}
+  .light-head h2{font-size:clamp(64px,11vw,180px);font-weight:500;letter-spacing:-.05em;line-height:.85}
+  .light-head h2 em{font-style:italic;font-weight:300;color:#6a6a6a}
+  .light-head .meta{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85;text-align:right;line-height:2}
+  .light-head .meta b{color:#F4F2ED;font-weight:500}
+
+  .cabin{
+    position:relative;z-index:2;
+    display:grid;grid-template-columns:1fr 2fr;gap:48px;align-items:stretch
+  }
+  .tint-control{display:flex;flex-direction:column;gap:24px}
+  .tint-slider{border-top:1px solid #ffffff1a;padding-top:20px}
+  .tint-slider .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85}
+  .tint-slider .v{font-family:var(--sans);font-weight:500;font-size:56px;letter-spacing:-.03em;margin-top:8px}
+  .tint-slider .v small{font-family:var(--mono);font-size:13px;color:#8A8A85;margin-left:4px;font-weight:400}
+  .tint-slider input[type="range"]{width:100%;margin-top:20px;-webkit-appearance:none;background:transparent}
+  .tint-slider input[type="range"]::-webkit-slider-runnable-track{height:1px;background:#ffffff33}
+  .tint-slider input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#F4F2ED;margin-top:-7px;cursor:pointer}
+  .tint-slider input[type="range"]::-moz-range-track{height:1px;background:#ffffff33}
+  .tint-slider input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#F4F2ED;border:none;cursor:pointer}
+  .tint-steps{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:#6a6a6a;margin-top:8px;text-transform:uppercase}
+
+  .opt-toggle{display:flex;gap:0;border:1px solid #ffffff1a;margin-top:8px}
+  .opt-toggle button{
+    flex:1;padding:14px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85;
+    transition:all .2s
+  }
+  .opt-toggle button.on{background:#F4F2ED;color:#0A0A0A}
+
+  .cabin-view{
+    position:relative;aspect-ratio:3/2;background:#0A0C10;overflow:hidden;
+    border:1px solid #ffffff14;
+  }
+  .windshield{
+    position:absolute;inset:6% 8% 24% 8%;
+    background:linear-gradient(180deg,#9ab5d0 0%, #6890b8 60%, #0a1428 100%);
+    clip-path:polygon(6% 100%,14% 0,86% 0,94% 100%);
+    transition:filter 1s, opacity 1s;
+  }
+  .cabin-view .dashboard{
+    position:absolute;left:0;right:0;bottom:0;height:28%;
+    background:linear-gradient(180deg,#0f0f12,#050507);
+    border-top:1px solid #ffffff0a;
+  }
+  .cabin-view .dash-hud{
+    position:absolute;bottom:6%;left:50%;transform:translateX(-50%);
+    font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:#8A8A85;text-transform:uppercase
+  }
+  .cabin-view .headliner{
+    position:absolute;inset:0 0 28% 0;
+    background:radial-gradient(ellipse at 50% -20%, #1a1f2a 0%, #05070B 70%);
+    opacity:0;transition:opacity 1s
+  }
+  .cabin-view.night .headliner{opacity:1}
+  .cabin-view .starfield{
+    position:absolute;inset:0 0 28% 0;opacity:0;transition:opacity 1s;pointer-events:none
+  }
+  .cabin-view.night .starfield{opacity:1}
+  .tint-overlay{
+    position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .6s
+  }
+
+  .light-pricing{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:64px;position:relative;z-index:2}
+  .light-pricing .p{border-top:1px solid #ffffff1a;padding-top:14px}
+  .light-pricing .p .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85}
+  .light-pricing .p .v{font-family:var(--sans);font-size:28px;font-weight:500;margin-top:6px;letter-spacing:-.02em}
+  .light-pricing .p .v small{font-family:var(--mono);font-size:12px;color:#8A8A85;margin-left:4px;font-weight:400}
+
+
+
+  /* ——— ACT CTA ——— */
+  .act-cta{
+    display:flex;justify-content:space-between;align-items:center;gap:24px;
+    margin-top:64px;padding:28px 32px;
+    background:var(--ink);color:var(--bg);
+    border:1px solid var(--ink);
+    transition:background .25s, color .25s, transform .25s
+  }
+  .act-cta.dark{background:var(--bg);color:var(--ink);border-color:var(--bg)}
+  #act-wash .act-cta.dark{background:#F4F2ED;color:#0A0A0A}
+  #act-light .act-cta.dark{background:#F4F2ED;color:#0A0A0A}
+  .act-cta:hover{background:var(--accent);color:var(--bg);border-color:var(--accent);transform:translateY(-2px)}
+  .act-cta .cta-l{display:flex;flex-direction:column;gap:4px}
+  .act-cta .cta-step{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.5}
+  .act-cta .cta-title{font-family:var(--sans);font-size:clamp(28px,3.4vw,44px);font-weight:500;letter-spacing:-.02em;line-height:1}
+  .act-cta .cta-r{font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase}
+  footer{padding:80px 48px 32px;background:var(--bg);border-top:1px solid var(--line)}
+  .f-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;margin-bottom:60px}
+  .f-mark{font-size:clamp(64px,10vw,140px);font-weight:500;letter-spacing:-.05em;line-height:.85}
+  .f-mark em{font-style:italic;color:var(--mute);font-weight:400}
+  .f-col h4{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin-bottom:16px;font-weight:500}
+  .f-col a{display:block;padding:4px 0;font-size:15px;color:var(--ink)}
+  .f-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:24px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;letter-spacing:.15em;color:var(--mute);text-transform:uppercase}
+
+  /* ——— Logo explorations strip ——— */
+  .logo-strip{padding:120px 48px 80px;background:var(--bg-2)}
+  .logo-strip .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin-bottom:24px}
+  .logos{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .logo-card{background:var(--bg);aspect-ratio:5/3;display:grid;place-items:center;position:relative}
+  .logo-card .cap{position:absolute;bottom:12px;left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+  .l-wordmark{font-family:var(--sans);font-size:46px;font-weight:800;letter-spacing:-.04em}
+  .l-wordmark .f{color:var(--accent)}
+  .l-mono{font-family:var(--sans);font-size:72px;font-weight:500;letter-spacing:-.05em;position:relative}
+  .l-mono::after{content:"";position:absolute;left:0;right:0;bottom:12px;height:6px;background:var(--ink);mix-blend-mode:difference}
+  .l-track{font-family:var(--sans);font-size:28px;font-weight:600;letter-spacing:.6em}
+  .l-circle{width:120px;height:120px;border:1.5px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-family:var(--sans);font-weight:600;font-size:28px;letter-spacing:.04em}
+  .l-circle small{position:absolute;font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--mute);margin-top:60px}
+
+  @media (max-width: 900px){
+    .chrome{padding:14px 20px}
+    .hero,.act{padding-left:20px;padding-right:20px}
+    .hero h1{font-size:clamp(64px,18vw,120px)}
+    .showroom, .wash-wall, .cabin, .booker, .f-grid, .wash-details, .light-pricing, .logos, .hero .sub-row{grid-template-columns:1fr;gap:16px}
+    .hero .three-dots{display:none}
+    .booker .summary, .booker .form{padding:24px}
+  }
+</style>
+</head>
+<body>
+
+<!-- fixed chrome -->
+<div class="chrome">
+  <div class="mark">FURTIF<span class="dot"></span></div>
+  <nav class="nav">
+    <a href="#hero" class="active"><span class="num">01</span>Index</a>
+    <a href="#act-car"><span class="num">02</span>Car</a>
+    <a href="#act-wash"><span class="num">03</span>Wash</a>
+    <a href="#act-light"><span class="num">04</span>Light</a>
+  </nav>
+</div>
+
+<div class="side-index" id="sideIndex">
+  <div>Montréal · QC</div>
+  <div class="row"><span id="progNum">00</span><div class="bar"></div><span>04</span></div>
+</div>
+
+<div class="scroll-hint">Scroll<div class="tick"></div></div>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero" id="hero">
+  <div class="hero-grid">
+    <aside class="hero-side">
+      <div class="eyebrow">MTL · Atelier N°001</div>
+      <div class="hero-side-bottom">
+        <div class="tick-line">
+          <span class="ln"></span><span>01</span>
+        </div>
+        <div class="meta-lines">
+          <div><b>Three disciplines.</b></div>
+          <div>One signature.</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="hero-main">
+      <h1 class="hero-title">
+        <span class="w1">Fur<span class="slash">/</span>tif</span>
+        <span class="w2"><em>the quiet</em></span>
+        <span class="w3">atelier.</span>
+      </h1>
+
+      <div class="hero-services">
+        <a href="#act-car" class="hs" data-n="01">
+          <span class="hs-n">01</span>
+          <span class="hs-name">Furtif Car</span>
+          <span class="hs-sub">Location · showroom</span>
+          <span class="hs-arr">→</span>
+        </a>
+        <a href="#act-wash" class="hs" data-n="02">
+          <span class="hs-n">02</span>
+          <span class="hs-name">Furtif Wash</span>
+          <span class="hs-sub">Detailing · 5 niveaux</span>
+          <span class="hs-arr">→</span>
+        </a>
+        <a href="#act-light" class="hs" data-n="03">
+          <span class="hs-n">03</span>
+          <span class="hs-name">Furtif Light</span>
+          <span class="hs-sub">Teintes · ciel étoilé</span>
+          <span class="hs-arr">→</span>
+        </a>
+      </div>
+    </div>
+
+    <aside class="hero-side right">
+      <div class="coord">
+        <div class="k">COORD</div>
+        <div class="v">45.50° N<br/>73.56° W</div>
+      </div>
+      <div class="coord">
+        <div class="k">STATUS</div>
+        <div class="v"><span class="live"></span> Open — 08:00 / 19:00</div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ═══════════════ LOGO EXPLORATIONS ═══════════════ -->
+<section class="logo-strip">
+  <div class="lbl">— Logo / pistes · 04 directions</div>
+  <div class="logos">
+    <div class="logo-card">
+      <div class="l-wordmark">FURTIF<span class="f">.</span></div>
+      <div class="cap">01 — Wordmark + point signal</div>
+    </div>
+    <div class="logo-card">
+      <div class="l-mono">F/</div>
+      <div class="cap">02 — Monogramme F/ (slash furtif)</div>
+    </div>
+    <div class="logo-card">
+      <div class="l-track">FURTIF</div>
+      <div class="cap">03 — Tracked · éditorial</div>
+    </div>
+    <div class="logo-card">
+      <div class="l-circle">F<small>— FURTIF MTL —</small></div>
+      <div class="cap">04 — Sceau · atelier</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ACT 02 · CAR ═══════════════ -->
+<section class="act" id="act-car">
+  <div class="car-head">
+    <div>
+      <div class="eyebrow">02 / Car · <span id="carCount">Flotte 24 véhicules</span></div>
+      <h2>Showroom<br/><em>— à la demande.</em></h2>
+    </div>
+    <div class="meta" style="font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);text-align:right;line-height:1.9">
+      <div>Pick-up · Montréal centre</div>
+      <div>Retour · 24h · 48h · 7j</div>
+      <div>Dépôt · 500 CAD</div>
+    </div>
+  </div>
+
+  <div class="showroom">
+    <!-- left: model list -->
+    <div class="showroom-left">
+      <div class="num-tag">— Sélection / 07</div>
+      <div class="model-list" id="modelList">
+        <button class="active" data-model="0"><span><span class="n">01</span>Porsche 911 GT3</span><span class="arrow">→</span></button>
+        <button data-model="1"><span><span class="n">02</span>Tesla Model S Plaid</span><span class="arrow">→</span></button>
+        <button data-model="2"><span><span class="n">03</span>Range Rover Sport</span><span class="arrow">→</span></button>
+        <button data-model="3"><span><span class="n">04</span>Mercedes G63 AMG</span><span class="arrow">→</span></button>
+        <button data-model="4"><span><span class="n">05</span>BMW M4 Competition</span><span class="arrow">→</span></button>
+        <button data-model="5"><span><span class="n">06</span>Lamborghini Urus</span><span class="arrow">→</span></button>
+        <button data-model="6"><span><span class="n">07</span>Audi RS6 Avant</span><span class="arrow">→</span></button>
+      </div>
+
+      <div class="rotator">
+        <button>‹</button>
+        <div class="track" style="--p:28%"></div>
+        <button>›</button>
+      </div>
+      <div class="num-tag" id="rotDeg">028° · 360 TURN</div>
+    </div>
+
+    <!-- center: turntable -->
+    <div class="stage">
+      <div class="turntable">
+        <div class="turntable-ring"></div>
+        <div class="car-plate" id="carPlate">[ véhicule · photo 3/4 avant ]</div>
+        <div class="car-shadow"></div>
+      </div>
+    </div>
+
+    <!-- right: specs -->
+    <div class="spec-col" id="specCol">
+      <div class="spec"><div class="k">Puissance</div><div class="v" data-spec="hp">510 <small>ch</small></div></div>
+      <div class="spec"><div class="k">0 — 100 km/h</div><div class="v" data-spec="accel">3.4 <small>s</small></div></div>
+      <div class="spec"><div class="k">Transmission</div><div class="v" data-spec="trans">PDK</div></div>
+      <div class="spec"><div class="k">Tarif / jour</div><div class="v" data-spec="price">890 <small>CAD</small></div></div>
+    </div>
+  </div>
+
+  <a class="act-cta" href="Furtif-booking.html?svc=car&model=0">
+    <span class="cta-l"><span class="cta-step">— Étape suivante</span><span class="cta-title">Réserver cette voiture</span></span>
+    <span class="cta-r" id="ctaCarPrice">890 CAD / jour →</span>
+  </a>
+</section>
+
+<!-- ═══════════════ ACT 03 · WASH ═══════════════ -->
+<section class="act" id="act-wash">
+  <div class="wash-head">
+    <div>
+      <div class="eyebrow" style="color:#8A8A85">03 / Wash · Detailing atelier</div>
+      <h2>Silent <em>wash.</em></h2>
+    </div>
+    <div class="meta">
+      <div><b>5 niveaux de soin.</b></div>
+      <div>Booking 48h minimum.</div>
+      <div style="margin-top:10px">Atelier · Ville-Marie</div>
+    </div>
+  </div>
+
+  <div class="wash-wall">
+    <div class="wash-menu" id="washMenu">
+      <button class="active" data-wash="0">
+        <span class="idx">01</span>
+        <span class="name">Express<small>Ext · aspiration — 45 min</small></span>
+        <span class="price">75 $</span>
+      </button>
+      <button data-wash="1">
+        <span class="idx">02</span>
+        <span class="name">Signature<small>Ext / Int complet — 2h30</small></span>
+        <span class="price">180 $</span>
+      </button>
+      <button data-wash="2">
+        <span class="idx">03</span>
+        <span class="name">Deep clean<small>Shampoing sièges · moquettes — 4h</small></span>
+        <span class="price">320 $</span>
+      </button>
+      <button data-wash="3">
+        <span class="idx">04</span>
+        <span class="name">Ceramic<small>Protection céramique 3 ans — 1 jour</small></span>
+        <span class="price">890 $</span>
+      </button>
+      <button data-wash="4">
+        <span class="idx">05</span>
+        <span class="name">Concours<small>Polish + correction peinture — 2 jours</small></span>
+        <span class="price">1 450 $</span>
+      </button>
+    </div>
+
+    <div class="wash-preview active" id="washPrev">
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="scan"></div>
+      <div class="car-silhouette"></div>
+      <div class="water"></div>
+      <div class="foam"></div>
+      <div class="hud">
+        <div>FURTIF·WASH / CH-03<br/>PRESSURE 140 BAR · 38°C</div>
+        <div>
+          <div style="text-align:right;margin-bottom:6px" id="washStage">STAGE · PRE-RINSE</div>
+          <div class="bars">
+            <span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wash-details">
+    <div class="det"><div class="k">Produits</div><div class="v">pH neutre<small>— sans rinçage agressif</small></div></div>
+    <div class="det"><div class="k">Eau</div><div class="v">Osmose<small>— 0 trace</small></div></div>
+    <div class="det"><div class="k">Pickup</div><div class="v">Inclus 15 km<small>— selon prestation</small></div></div>
+    <div class="det"><div class="k">Disponibilité</div><div class="v">Mar — Sam<small>— 08:00 / 19:00</small></div></div>
+  </div>
+
+  <a class="act-cta dark" href="Furtif-booking.html?svc=wash&tier=0">
+    <span class="cta-l"><span class="cta-step">— Étape suivante</span><span class="cta-title">Réserver cette prestation</span></span>
+    <span class="cta-r" id="ctaWashPrice">Express · 75 CAD →</span>
+  </a>
+</section>
+
+<!-- ═══════════════ ACT 04 · LIGHT ═══════════════ -->
+<section class="act" id="act-light">
+  <div class="stars" id="stars"></div>
+
+  <div class="light-head">
+    <div>
+      <div class="eyebrow" style="color:#8A8A85">04 / Light · Tint & sky</div>
+      <h2>Fall <em>into night.</em></h2>
+    </div>
+    <div class="meta">
+      <div><b>Vitres · teintes certifiées.</b></div>
+      <div>Ciel étoilé fibre optique.</div>
+      <div style="margin-top:10px">Garantie 5 ans</div>
+    </div>
+  </div>
+
+  <div class="cabin">
+    <div class="tint-control">
+      <div class="tint-slider">
+        <div class="k">VLT · transmission lumière visible</div>
+        <div class="v" id="vltVal">35<small>%</small></div>
+        <input type="range" id="vlt" min="5" max="70" value="35" step="5"/>
+        <div class="tint-steps"><span>5%</span><span>20%</span><span>35%</span><span>50%</span><span>70%</span></div>
+      </div>
+
+      <div>
+        <div class="k" style="font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85">Ciel étoilé</div>
+        <div class="opt-toggle" id="skyToggle">
+          <button>Aucun</button>
+          <button>Classique · 200 pts</button>
+          <button class="on">Galaxie · 400 pts</button>
+          <button>Cosmos · 800 pts</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="k" style="font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8A8A85">Couverture</div>
+        <div class="opt-toggle" id="covToggle">
+          <button>Avant</button>
+          <button class="on">Intégral</button>
+          <button>Pano + intégral</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cabin-view night" id="cabin">
+      <div class="corner tl" style="border-color:#ffffff33"></div>
+      <div class="corner tr" style="border-color:#ffffff33"></div>
+      <div class="corner bl" style="border-color:#ffffff33"></div>
+      <div class="corner br" style="border-color:#ffffff33"></div>
+
+      <div class="windshield" id="windshield"></div>
+      <div class="headliner"></div>
+      <div class="starfield" id="starfield"></div>
+      <div class="dashboard"></div>
+      <div class="dash-hud">— INTERIOR · MODE NIGHT —</div>
+      <div class="tint-overlay" id="tintOverlay"></div>
+    </div>
+  </div>
+
+  <div class="light-pricing">
+    <div class="p"><div class="k">Vitres avant</div><div class="v">450 <small>CAD</small></div></div>
+    <div class="p"><div class="k">Intégral 4 portes</div><div class="v">890 <small>CAD</small></div></div>
+    <div class="p"><div class="k">Ciel · 400 pts</div><div class="v">1 200 <small>CAD</small></div></div>
+    <div class="p"><div class="k">Pack cabine complet</div><div class="v">2 390 <small>CAD</small></div></div>
+  </div>
+
+  <a class="act-cta dark" href="Furtif-booking.html?svc=light">
+    <span class="cta-l"><span class="cta-step">— Étape suivante</span><span class="cta-title">Configurer &amp; réserver</span></span>
+    <span class="cta-r" id="ctaLightPrice">Pack cabine · 2 390 CAD →</span>
+  </a>
+</section>
+
+
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <div class="f-grid">
+    <div class="f-mark">Fur<em>/</em>tif<span style="color:var(--accent)">.</span></div>
+    <div class="f-col">
+      <h4>Services</h4>
+      <a href="#act-car">Furtif Car</a>
+      <a href="#act-wash">Furtif Wash</a>
+      <a href="#act-light">Furtif Light</a>
+    </div>
+    <div class="f-col">
+      <h4>Atelier</h4>
+      <a>Ville-Marie · MTL</a>
+      <a>Mar — Sam · 08—19</a>
+      <a>contact@furtif.mtl</a>
+    </div>
+    <div class="f-col">
+      <h4>Légal</h4>
+      <a>CGV</a><a>Confidentialité</a><a>Assurance</a>
+    </div>
+  </div>
+  <div class="f-bottom">
+    <div>© 2026 Furtif Atelier · Tous droits réservés</div>
+    <div>v0.1 · refonte</div>
+  </div>
+</footer>
+
+<script>
+/* —— dataset voitures —— */
+const MODELS = [
+  {name:"Porsche 911 GT3", hp:"510 ch", accel:"3.4 s", trans:"PDK", price:"890 CAD"},
+  {name:"Tesla Model S Plaid", hp:"1020 ch", accel:"2.1 s", trans:"Single-speed", price:"720 CAD"},
+  {name:"Range Rover Sport", hp:"530 ch", accel:"4.5 s", trans:"8 auto", price:"620 CAD"},
+  {name:"Mercedes G63 AMG", hp:"585 ch", accel:"4.5 s", trans:"9G-tronic", price:"950 CAD"},
+  {name:"BMW M4 Competition", hp:"530 ch", accel:"3.5 s", trans:"M Steptronic", price:"540 CAD"},
+  {name:"Lamborghini Urus", hp:"666 ch", accel:"3.3 s", trans:"8 auto", price:"1 450 CAD"},
+  {name:"Audi RS6 Avant", hp:"630 ch", accel:"3.4 s", trans:"Tiptronic", price:"680 CAD"},
+];
+
+/* model list */
+const modelBtns = document.querySelectorAll('#modelList button');
+const specCol = document.getElementById('specCol');
+const carPlate = document.getElementById('carPlate');
+modelBtns.forEach(b=>{
+  b.addEventListener('click',()=>{
+    modelBtns.forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const i = +b.dataset.model;
+    const m = MODELS[i];
+    specCol.querySelector('[data-spec="hp"]').innerHTML = m.hp.replace(/ (\w+)/,' <small>$1</small>');
+    specCol.querySelector('[data-spec="accel"]').innerHTML = m.accel.replace(/ (\w+)/,' <small>$1</small>');
+    specCol.querySelector('[data-spec="trans"]').textContent = m.trans;
+    specCol.querySelector('[data-spec="price"]').innerHTML = m.price.replace(/ (\w+)/,' <small>$1</small>');
+    carPlate.textContent = `[ ${m.name} · photo 3/4 avant ]`;
+    carPlate.style.transform = `perspective(800px) rotateY(-${6 + i*2}deg)`;
+  });
+});
+
+/* —— WASH interactions —— */
+const washBtns = document.querySelectorAll('#washMenu button');
+const washPrev = document.getElementById('washPrev');
+const washStage = document.getElementById('washStage');
+const stages = ["STAGE · PRE-RINSE","STAGE · FOAM","STAGE · DEEP CLEAN","STAGE · CERAMIC","STAGE · POLISH"];
+washBtns.forEach(b=>{
+  b.addEventListener('click',()=>{
+    washBtns.forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    washPrev.classList.add('sweep');
+    setTimeout(()=>washPrev.classList.remove('sweep'), 1400);
+    washStage.textContent = stages[+b.dataset.wash];
+  });
+});
+
+/* —— LIGHT interactions —— */
+const vlt = document.getElementById('vlt');
+const vltVal = document.getElementById('vltVal');
+const windshield = document.getElementById('windshield');
+const tintOverlay = document.getElementById('tintOverlay');
+const cabin = document.getElementById('cabin');
+
+function updateTint(){
+  const v = +vlt.value;
+  vltVal.innerHTML = `${v}<small>%</small>`;
+  // inverse: lower VLT = darker
+  const darkness = (70 - v) / 70; // 0..1
+  tintOverlay.style.opacity = (darkness * 0.7).toFixed(2);
+  windshield.style.filter = `brightness(${1 - darkness*0.7})`;
+  cabin.classList.toggle('night', v <= 35);
+}
+vlt.addEventListener('input', updateTint);
+updateTint();
+
+/* star field */
+const stars = document.getElementById('stars');
+const starfield = document.getElementById('starfield');
+function placeStars(container, count){
+  container.innerHTML = '';
+  for (let i=0; i<count; i++){
+    const s = document.createElement('i');
+    s.style.left = Math.random()*100 + '%';
+    s.style.top = Math.random()*100 + '%';
+    s.style.animationDelay = (Math.random()*4) + 's';
+    s.style.opacity = (0.3 + Math.random()*0.7).toFixed(2);
+    const size = Math.random() < 0.1 ? 3 : Math.random() < 0.3 ? 2 : 1;
+    s.style.width = size + 'px'; s.style.height = size + 'px';
+    container.appendChild(s);
+  }
+}
+placeStars(stars, 80);
+placeStars(starfield, 180);
+
+/* toggles */
+document.querySelectorAll('.opt-toggle').forEach(grp=>{
+  grp.querySelectorAll('button').forEach((b,i,arr)=>{
+    b.addEventListener('click',()=>{
+      arr.forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      if(grp.id === 'skyToggle'){
+        const counts=[0,80,180,360];
+        placeStars(starfield, counts[i]);
+      }
+      if(grp.id === 'covToggle'){
+        const p = ['450','890','2 390'][i];
+        const lbls = ['Vitres avant','Intégral','Pack cabine'];
+        const el = document.getElementById('ctaLightPrice');
+        if(el) el.textContent = `${lbls[i]} · ${p} CAD →`;
+      }
+    });
+  });
+});
+
+/* —— CAR CTA sync —— */
+const ctaCarPrice = document.getElementById('ctaCarPrice');
+const ctaCar = document.querySelector('#act-car .act-cta');
+function syncCarCTA(){
+  const active = document.querySelector('#modelList button.active');
+  if(!active) return;
+  const i = +active.dataset.model;
+  const m = MODELS[i];
+  if(ctaCarPrice) ctaCarPrice.textContent = `${m.name} · ${m.price}/jour →`;
+  if(ctaCar) ctaCar.href = `Furtif-booking.html?svc=car&model=${i}`;
+}
+document.querySelectorAll('#modelList button').forEach(b=>b.addEventListener('click', syncCarCTA));
+syncCarCTA();
+
+/* —— WASH CTA sync —— */
+const WASH_TIERS = [
+  ['Express','75'],['Signature','180'],['Deep clean','320'],['Ceramic','890'],['Concours','1 450']
+];
+const ctaWashPrice = document.getElementById('ctaWashPrice');
+const ctaWash = document.querySelector('#act-wash .act-cta');
+function syncWashCTA(){
+  const active = document.querySelector('#washMenu button.active');
+  if(!active) return;
+  const i = +active.dataset.wash;
+  if(ctaWashPrice) ctaWashPrice.textContent = `${WASH_TIERS[i][0]} · ${WASH_TIERS[i][1]} CAD →`;
+  if(ctaWash) ctaWash.href = `Furtif-booking.html?svc=wash&tier=${i}`;
+}
+document.querySelectorAll('#washMenu button').forEach(b=>b.addEventListener('click', syncWashCTA));
+syncWashCTA();
+
+/* —— Nav + progress —— */
+const navLinks = document.querySelectorAll('.nav a');
+const sections = ['hero','act-car','act-wash','act-light'].map(id=>document.getElementById(id));
+const sideIndex = document.getElementById('sideIndex');
+const progNum = document.getElementById('progNum');
+
+function onScroll(){
+  const y = window.scrollY + window.innerHeight * 0.4;
+  let cur = 0;
+  sections.forEach((s,i)=>{ if(s && s.offsetTop <= y) cur = i; });
+  navLinks.forEach((a,i)=>a.classList.toggle('active', i===cur));
+  progNum.textContent = String(cur+1).padStart(2,'0');
+  // dark index on dark acts
+  sideIndex.classList.toggle('dark', cur===2 || cur===3);
+}
+window.addEventListener('scroll', onScroll, {passive:true});
+onScroll();
+
+/* smooth scroll for nav */
+navLinks.forEach(a=>{
+  a.addEventListener('click',(e)=>{
+    e.preventDefault();
+    const t = document.querySelector(a.getAttribute('href'));
+    t && t.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+/* —— rotator demo tick —— */
+let deg = 28;
+setInterval(()=>{
+  deg = (deg + 4) % 360;
+  const el = document.getElementById('rotDeg');
+  if (el) el.textContent = String(deg).padStart(3,'0') + '° · 360 TURN';
+  const track = document.querySelector('.rotator .track');
+  if (track) track.style.setProperty('--p', (deg/360*100) + '%');
+  const plate = document.getElementById('carPlate');
+  if (plate) plate.style.transform = `perspective(800px) rotateY(${-6 + Math.sin(deg/60)*10}deg)`;
+}, 1200);
+</script>
+</body>
+</html>

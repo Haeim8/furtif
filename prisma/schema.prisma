@@ -1,0 +1,428 @@
+// Schéma de base de données pour l'agence de location de voitures
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Modèle Utilisateur
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(CLIENT)
+
+  // Information client
+  phone         String?
+  address       String?
+  city          String?
+  postalCode    String?
+
+  // Documents
+  driverLicense String?   // URL du permis de conduire
+  iban          String?   // RIB/IBAN
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  reservations  Reservation[]
+  problems      Problem[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT
+}
+
+// NextAuth Account
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// NextAuth Session
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Modèle Véhicule
+model Vehicle {
+  id              String   @id @default(cuid())
+  brand           String   // Marque (Toyota, Ford, etc.)
+  model           String   // Modèle (Corolla, F-150, etc.)
+  year            Int
+  color           String
+  licensePlate    String   @unique
+  vin             String?  @unique // Numéro de série
+
+  // Type et caractéristiques
+  type            VehicleType
+  transmission    TransmissionType
+  fuelType        FuelType
+  seats           Int
+  doors           Int
+
+  // Consommation
+  fuelConsumption Float    // Litres/100km
+
+  // Prix
+  pricePerDay     Float
+  deposit         Float    // Caution
+
+  // Images
+  images          String? // URLs des images (JSON)
+  mainImage       String?  // Image principale
+
+  // Disponibilité
+  status          VehicleStatus @default(AVAILABLE)
+
+  // Features
+  features        String? // Features (JSON)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  reservations    Reservation[]
+  inspections     Inspection[]
+
+  @@map("vehicles")
+}
+
+enum VehicleType {
+  SEDAN
+  SUV
+  PICKUP
+  VAN
+  SPORT
+  LUXURY
+  ELECTRIC
+}
+
+enum TransmissionType {
+  MANUAL
+  AUTOMATIC
+}
+
+enum FuelType {
+  ESSENCE
+  DIESEL
+  HYBRID
+  ELECTRIC
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  RESERVED
+  RENTED
+  MAINTENANCE
+  UNAVAILABLE
+}
+
+// Modèle Réservation
+model Reservation {
+  id              String   @id @default(cuid())
+
+  // Client
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+
+  // Véhicule
+  vehicleId       String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  // Dates
+  startDate       DateTime
+  endDate         DateTime
+
+  // Prix
+  totalPrice      Float
+  depositPaid     Float
+  depositReturned Boolean  @default(false)
+
+  // Status
+  status          ReservationStatus @default(PENDING)
+
+  // Paiement Stripe
+  stripePaymentId String?
+  stripeDepositId String?
+  paymentMethod   PaymentMethod @default(CARD) // Méthode de paiement
+
+  // Validation manuelle
+  manualBooking   Boolean  @default(false)
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  inspections     Inspection[]
+  invoices        Invoice[]
+
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CARD      // Carte bancaire
+  CASH      // Espèce
+  CRYPTO    // Cryptomonnaie
+}
+
+// Modèle Inspection (Formulaire de départ/retour)
+model Inspection {
+  id              String   @id @default(cuid())
+
+  // Type
+  type            InspectionType
+
+  // Réservation
+  reservationId   String
+  reservation     Reservation @relation(fields: [reservationId], references: [id])
+
+  // Véhicule
+  vehicleId       String
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  // Photos (jusqu'à 40)
+  photos          String? // URLs des photos (JSON)
+
+  // État du véhicule
+  mileage         Int
+  fuelLevel       Float    // Niveau de carburant (0-100%)
+
+  // Dommages et notes
+  damages         String?    // Liste des dommages constatés (JSON)
+  notes           String?
+
+  // Signature électronique
+  signature       String?  // URL de la signature
+  signedBy        String?  // Nom du signataire
+  signedAt        DateTime?
+
+  // Validation
+  validated       Boolean  @default(false)
+  validatedBy     String?  // ID de l'admin qui a validé
+  validatedAt     DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("inspections")
+}
+
+enum InspectionType {
+  DEPARTURE
+  RETURN
+}
+
+// Modèle Facture
+model Invoice {
+  id              String   @id @default(cuid())
+  invoiceNumber   String   @unique
+
+  // Réservation
+  reservationId   String
+  reservation     Reservation @relation(fields: [reservationId], references: [id])
+
+  // Montants
+  subtotal        Float
+  tax             Float
+  total           Float
+
+  // PDF
+  pdfUrl          String?
+
+  // Envoi par email
+  sentAt          DateTime?
+  emailSentTo     String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("invoices")
+}
+
+// Modèle Problème signalé par client
+model Problem {
+  id              String   @id @default(cuid())
+
+  // Client
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+
+  // Type et description
+  type            ProblemType
+  subject         String
+  description     String
+
+  // Photos
+  photos          String? // URLs (JSON)
+
+  // Status
+  status          ProblemStatus @default(OPEN)
+
+  // Réponse admin
+  adminResponse   String?
+  respondedBy     String?
+  respondedAt     DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("problems")
+}
+
+enum ProblemType {
+  ACCIDENT
+  BREAKDOWN
+  DAMAGE
+  OTHER
+}
+
+enum ProblemStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+// Modèle Email Campaign
+model EmailCampaign {
+  id              String   @id @default(cuid())
+  name            String
+  subject         String
+  content         String
+
+  // Destinataires
+  sentTo          String? // Liste d'emails ou "ALL" (JSON)
+
+  // Statut
+  status          CampaignStatus @default(DRAFT)
+
+  // Stats
+  sentCount       Int      @default(0)
+  openedCount     Int      @default(0)
+  clickedCount    Int      @default(0)
+
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("email_campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  FAILED
+}
+
+// Modèle Véhicule Promotionnel (Hero Section)
+model PromoVehicle {
+  id          String   @id @default(cuid())
+  name        String   // Nom affiché (ex: "Tesla Model 3")
+  image       String   // URL de l'image
+  price       Float    // Prix promotionnel
+  oldPrice    Float?   // Prix barré (optionnel)
+
+  // Ordre d'affichage
+  order       Int      @default(0)
+
+  // Actif ou non
+  active      Boolean  @default(true)
+
+  // Lien optionnel vers un véhicule réel
+  vehicleId   String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("promo_vehicles")
+}
+
+// Modèle Réservation Furtif Wash (Max 5/jour)
+model WashBooking {
+  id              String   @id @default(cuid())
+  userId          String?
+  // Si le client n'est pas loggé on peut garder ses infos
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  
+  tier            Int      // 0=Express, 1=Signature, 2=Deep, 3=Ceramic, 4=Concours
+  date            DateTime // Date de la prestation (pour vérifier la limite de 5)
+  status          ReservationStatus @default(PENDING)
+  totalPrice      Float
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("wash_bookings")
+}
+
+// Modèle Réservation Furtif Light (Max 3/jour)
+model LightBooking {
+  id              String   @id @default(cuid())
+  userId          String?
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  
+  vlt             Int      // 5 à 70%
+  skyType         Int      // 0=Aucun, 1=Classique, 2=Galaxie, 3=Cosmos
+  coverage        Int      // 0=Avant, 1=Integral, 2=Pano
+  
+  date            DateTime // Date de la prestation (pour vérifier la limite de 3)
+  status          ReservationStatus @default(PENDING)
+  totalPrice      Float
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("light_bookings")
+}
+

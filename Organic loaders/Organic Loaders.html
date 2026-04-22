@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Organic Loaders</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --ink: #111111;
+    --tile: #ffffff;
+    --line: #e7e2d6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    padding: 48px 32px 80px;
+    min-height: 100vh;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 200px);
+    gap: 24px;
+    justify-content: center;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .cell {
+    width: 200px;
+    height: 200px;
+    background: var(--tile);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    position: relative;
+  }
+  svg { display: block; }
+
+  /* ---------- 1. Single morphing blob ---------- */
+  .l1 {
+    width: 120px; height: 120px;
+    background: var(--ink);
+    animation: morph1 6s ease-in-out infinite;
+  }
+  @keyframes morph1 {
+    0%,100% { border-radius: 42% 58% 60% 40% / 45% 40% 60% 55%; transform: rotate(0deg); }
+    25%     { border-radius: 62% 38% 40% 60% / 58% 62% 38% 42%; transform: rotate(90deg); }
+    50%     { border-radius: 48% 52% 38% 62% / 60% 48% 52% 40%; transform: rotate(180deg); }
+    75%     { border-radius: 38% 62% 58% 42% / 42% 56% 44% 58%; transform: rotate(270deg); }
+  }
+
+  /* ---------- 2. Three metaballs (goo) ---------- */
+  .l2-wrap { width: 160px; height: 120px; filter: url(#goo2); position: relative; }
+  .l2-wrap i {
+    position: absolute; top: 50%; left: 50%;
+    width: 38px; height: 38px; margin: -19px 0 0 -19px;
+    background: var(--ink); border-radius: 50%;
+  }
+  .l2-wrap i:nth-child(1) { animation: orbit2 2.4s ease-in-out infinite; }
+  .l2-wrap i:nth-child(2) { animation: orbit2 2.4s ease-in-out infinite -0.8s; }
+  .l2-wrap i:nth-child(3) { animation: orbit2 2.4s ease-in-out infinite -1.6s; }
+  @keyframes orbit2 {
+    0%,100% { transform: translate(-44px, 0) scale(1); }
+    50%     { transform: translate( 44px, 0) scale(1); }
+  }
+
+  /* ---------- 3. Pulsing dot ring ---------- */
+  .l3 { position: relative; width: 140px; height: 140px; }
+  .l3 i {
+    position: absolute; top: 50%; left: 50%;
+    width: 18px; height: 18px; margin: -9px 0 0 -9px;
+    background: var(--ink); border-radius: 50%;
+    transform-origin: 0 0;
+    animation: pulse3 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse3 {
+    0%,100% { transform: rotate(var(--a)) translate(52px) scale(0.4); opacity: 0.3; }
+    50%     { transform: rotate(var(--a)) translate(52px) scale(1.1); opacity: 1; }
+  }
+
+  /* ---------- 4. Blob on a path (filter goo) ---------- */
+  .l4 { width: 140px; height: 140px; filter: url(#goo4); position: relative; }
+  .l4 i {
+    position: absolute; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--ink); top: 50%; left: 50%; margin: -16px 0 0 -16px;
+  }
+  .l4 i:nth-child(1) { animation: travel4 2.2s ease-in-out infinite; }
+  .l4 i:nth-child(2) { animation: travel4 2.2s ease-in-out infinite -1.1s; }
+  @keyframes travel4 {
+    0%   { transform: translate( 40px,  0); }
+    25%  { transform: translate(  0,   40px); }
+    50%  { transform: translate(-40px,  0); }
+    75%  { transform: translate(  0,  -40px); }
+    100% { transform: translate( 40px,  0); }
+  }
+
+  /* ---------- 5. Breathing blob outline ---------- */
+  .l5-blob { animation: breathe5 3s ease-in-out infinite; transform-origin: center; }
+  @keyframes breathe5 {
+    0%,100% { transform: scale(0.85) rotate(0deg); }
+    50%     { transform: scale(1.05) rotate(180deg); }
+  }
+
+  /* ---------- 6. Liquid drip ---------- */
+  .l6 { filter: url(#goo6); position: relative; width: 60px; height: 160px; }
+  .l6 .head {
+    position: absolute; left: 50%; top: 20px; width: 36px; height: 36px;
+    margin-left: -18px; background: var(--ink); border-radius: 50%;
+  }
+  .l6 .drop {
+    position: absolute; left: 50%; top: 26px; width: 24px; height: 24px;
+    margin-left: -12px; background: var(--ink); border-radius: 50%;
+    animation: drip6 2.2s cubic-bezier(.55,0,.8,.3) infinite;
+  }
+  @keyframes drip6 {
+    0%   { transform: translateY(0)   scale(0.2); opacity: 0; }
+    20%  { transform: translateY(0)   scale(1);   opacity: 1; }
+    100% { transform: translateY(120px) scale(0.6); opacity: 0; }
+  }
+
+  /* ---------- 7. Two blobs merging ---------- */
+  .l7 { filter: url(#goo7); position: relative; width: 160px; height: 80px; }
+  .l7 i {
+    position: absolute; top: 50%; width: 46px; height: 46px;
+    margin-top: -23px; background: var(--ink); border-radius: 50%;
+  }
+  .l7 i.a { left: 0;    animation: merge7 2.4s ease-in-out infinite; }
+  .l7 i.b { right: 0;   animation: merge7 2.4s ease-in-out infinite reverse; }
+  @keyframes merge7 {
+    0%,100% { transform: translateX(0)   scale(1); }
+    50%     { transform: translateX(58px) scale(0.8); }
+  }
+  .l7 i.b { animation-name: merge7b; }
+  @keyframes merge7b {
+    0%,100% { transform: translateX(0)    scale(1); }
+    50%     { transform: translateX(-58px) scale(0.8); }
+  }
+
+  /* ---------- 8. Rolling lump ---------- */
+  .l8 {
+    width: 86px; height: 86px; background: var(--ink);
+    animation: roll8 2.8s ease-in-out infinite, squish8 1.4s ease-in-out infinite;
+    border-radius: 44% 56% 60% 40% / 50% 45% 55% 50%;
+  }
+  @keyframes roll8 {
+    0%   { transform: translateX(-46px) rotate(0); }
+    50%  { transform: translateX( 46px) rotate(360deg); }
+    100% { transform: translateX(-46px) rotate(720deg); }
+  }
+  @keyframes squish8 {
+    0%,100% { border-radius: 44% 56% 60% 40% / 50% 45% 55% 50%; }
+    50%     { border-radius: 58% 42% 46% 54% / 40% 60% 40% 60%; }
+  }
+
+  /* ---------- 9. Ripple rings (blobby) ---------- */
+  .l9 { position: relative; width: 140px; height: 140px; }
+  .l9 i {
+    position: absolute; inset: 0;
+    border: 2px solid var(--ink);
+    border-radius: 46% 54% 52% 48% / 50% 46% 54% 50%;
+    animation: ripple9 2.4s ease-out infinite;
+    opacity: 0;
+  }
+  .l9 i:nth-child(2) { animation-delay: 0.8s; }
+  .l9 i:nth-child(3) { animation-delay: 1.6s; }
+  @keyframes ripple9 {
+    0%   { transform: scale(0.2) rotate(0deg);   opacity: 1; }
+    100% { transform: scale(1)   rotate(180deg); opacity: 0; }
+  }
+
+  /* ---------- 10. Orbiting satellite (goo) ---------- */
+  .l10 { filter: url(#goo10); position: relative; width: 140px; height: 140px; }
+  .l10 .core {
+    position: absolute; top: 50%; left: 50%; width: 48px; height: 48px;
+    margin: -24px 0 0 -24px; background: var(--ink); border-radius: 50%;
+  }
+  .l10 .sat {
+    position: absolute; top: 50%; left: 50%; width: 22px; height: 22px;
+    margin: -11px 0 0 -11px; background: var(--ink); border-radius: 50%;
+    animation: orbit10 1.8s linear infinite;
+  }
+  @keyframes orbit10 {
+    0%   { transform: rotate(0)    translate(46px) rotate(0); }
+    100% { transform: rotate(360deg) translate(46px) rotate(-360deg); }
+  }
+
+  /* ---------- 14. Wobbly square ---------- */
+  .l14 {
+    width: 100px; height: 100px; background: var(--ink);
+    animation: wobble14 4s ease-in-out infinite;
+  }
+  @keyframes wobble14 {
+    0%,100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; transform: rotate(0); }
+    50%     { border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; transform: rotate(180deg); }
+  }
+
+  /* ---------- 15. Vertical goo bar ---------- */
+  .l15 { filter: url(#goo15); position: relative; width: 50px; height: 160px; }
+  .l15 i {
+    position: absolute; left: 50%; width: 40px; height: 40px;
+    margin-left: -20px; background: var(--ink); border-radius: 50%;
+  }
+  .l15 i:nth-child(1) { animation: bob15 1.8s ease-in-out infinite;         top: 10px; }
+  .l15 i:nth-child(2) { animation: bob15 1.8s ease-in-out infinite -0.6s;   top: 60px; }
+  .l15 i:nth-child(3) { animation: bob15 1.8s ease-in-out infinite -1.2s;   top: 110px; }
+  @keyframes bob15 {
+    0%,100% { transform: translateY(0)    scale(1); }
+    50%     { transform: translateY(-18px) scale(0.85); }
+  }
+
+  /* ---------- 16. Amoeba path morph ---------- */
+
+  /* ---------- 17. Dotted swirl ---------- */
+  .l17 { position: relative; width: 140px; height: 140px; animation: spin17 2.4s linear infinite; }
+  @keyframes spin17 { to { transform: rotate(360deg); } }
+  .l17 i {
+    position: absolute; top: 50%; left: 50%; border-radius: 50%;
+    background: var(--ink); transform-origin: 0 0;
+  }
+
+  /* ---------- 18. Double helix blobs ---------- */
+  .l18 { filter: url(#goo18); position: relative; width: 160px; height: 80px; }
+  .l18 i {
+    position: absolute; top: 50%; width: 26px; height: 26px;
+    margin-top: -13px; background: var(--ink); border-radius: 50%;
+  }
+  .l18 i.a { animation: helix18a 2.2s ease-in-out infinite; }
+  .l18 i.b { animation: helix18b 2.2s ease-in-out infinite; }
+  @keyframes helix18a {
+    0%,100% { left: 0;   transform: translateY(-18px); }
+    50%     { left: calc(100% - 26px); transform: translateY(18px); }
+  }
+  @keyframes helix18b {
+    0%,100% { left: calc(100% - 26px); transform: translateY(-18px); }
+    50%     { left: 0;   transform: translateY(18px); }
+  }
+
+  /* ---------- 19. Breathing grid of dots ---------- */
+  .l19 {
+    filter: url(#goo19);
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    width: 120px; height: 120px;
+  }
+  .l19 i {
+    background: var(--ink); border-radius: 50%;
+    animation: breathe19 1.8s ease-in-out infinite;
+  }
+  .l19 i:nth-child(1){ animation-delay: 0s;   }
+  .l19 i:nth-child(2){ animation-delay: .1s;  }
+  .l19 i:nth-child(3){ animation-delay: .2s;  }
+  .l19 i:nth-child(4){ animation-delay: .1s;  }
+  .l19 i:nth-child(5){ animation-delay: .2s;  }
+  .l19 i:nth-child(6){ animation-delay: .3s;  }
+  .l19 i:nth-child(7){ animation-delay: .2s;  }
+  .l19 i:nth-child(8){ animation-delay: .3s;  }
+  .l19 i:nth-child(9){ animation-delay: .4s;  }
+  @keyframes breathe19 {
+    0%,100% { transform: scale(0.4); }
+    50%     { transform: scale(1.1); }
+  }
+
+  /* ---------- 20. Jellyfish ---------- */
+  .l20 { filter: url(#goo20); position: relative; width: 140px; height: 160px; }
+  .l20 .bell {
+    position: absolute; top: 20px; left: 50%; width: 90px; height: 60px;
+    margin-left: -45px; background: var(--ink);
+    border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
+    animation: bell20 2.2s ease-in-out infinite;
+  }
+  @keyframes bell20 {
+    0%,100% { transform: scaleY(1)   scaleX(1); }
+    50%     { transform: scaleY(0.75) scaleX(1.15); }
+  }
+  .l20 .leg {
+    position: absolute; top: 60px; width: 10px; height: 70px;
+    background: var(--ink); border-radius: 50%;
+    animation: sway20 2.2s ease-in-out infinite;
+  }
+  .l20 .leg:nth-child(2) { left: 50%; margin-left: -30px; animation-delay: -0.2s; }
+  .l20 .leg:nth-child(3) { left: 50%; margin-left: -5px;  animation-delay: -0.4s; }
+  .l20 .leg:nth-child(4) { left: 50%; margin-left:  20px; animation-delay: -0.6s; }
+  @keyframes sway20 {
+    0%,100% { transform: translateY(0)   scaleY(1); }
+    50%     { transform: translateY(16px) scaleY(0.7); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Shared SVG filter defs (goo + displacement) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="goo2"><feGaussianBlur in="SourceGraphic" stdDeviation="8"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11"/></filter>
+    <filter id="goo4"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11"/></filter>
+    <filter id="goo6"><feGaussianBlur in="SourceGraphic" stdDeviation="6"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11"/></filter>
+    <filter id="goo7"><feGaussianBlur in="SourceGraphic" stdDeviation="9"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -12"/></filter>
+    <filter id="goo10"><feGaussianBlur in="SourceGraphic" stdDeviation="6"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11"/></filter>
+    <filter id="goo15"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11"/></filter>
+    <filter id="goo18"><feGaussianBlur in="SourceGraphic" stdDeviation="5"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11"/></filter>
+    <filter id="goo19"><feGaussianBlur in="SourceGraphic" stdDeviation="4"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10"/></filter>
+    <filter id="goo20"><feGaussianBlur in="SourceGraphic" stdDeviation="5"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11"/></filter>
+
+    <!-- Turbulent displacement for organic wobble -->
+    <filter id="turb11" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="3">
+        <animate attributeName="baseFrequency" dur="8s" values="0.015;0.035;0.015" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="12"/>
+    </filter>
+    <filter id="turb12" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="7">
+        <animate attributeName="baseFrequency" dur="10s" values="0.01;0.03;0.01" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="14"/>
+    </filter>
+    <filter id="turb13" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="1">
+        <animate attributeName="baseFrequency" dur="6s" values="0.025;0.05;0.025" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="9"/>
+    </filter>
+
+    <!-- Morph paths for SVG loader 5 (outline blob) -->
+    <!-- Morph paths for SVG loader 16 (filled amoeba) -->
+  </defs>
+</svg>
+
+<main class="grid">
+
+  <!-- 1 -->
+  <div class="cell"><div class="l1"></div></div>
+
+  <!-- 2 -->
+  <div class="cell"><div class="l2-wrap"><i></i><i></i><i></i></div></div>
+
+  <!-- 3 -->
+  <div class="cell">
+    <div class="l3">
+      <i style="--a:0deg"></i><i style="--a:45deg"></i><i style="--a:90deg"></i><i style="--a:135deg"></i>
+      <i style="--a:180deg"></i><i style="--a:225deg"></i><i style="--a:270deg"></i><i style="--a:315deg"></i>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="cell"><div class="l4"><i></i><i></i></div></div>
+
+  <!-- 5: SVG outline blob morphing between shapes -->
+  <div class="cell">
+    <svg class="l5-blob" width="140" height="140" viewBox="0 0 100 100">
+      <path fill="none" stroke="#111" stroke-width="3">
+        <animate attributeName="d" dur="6s" repeatCount="indefinite"
+          values="
+            M50,12 C74,12 88,30 88,50 C88,70 72,88 50,88 C28,88 12,70 12,50 C12,30 26,12 50,12 Z;
+            M50,14 C78,10 90,36 86,54 C82,74 64,90 46,86 C24,82 10,64 14,44 C18,26 30,16 50,14 Z;
+            M50,10 C72,16 92,28 86,52 C80,72 68,92 48,86 C26,82 14,66 16,46 C18,26 32,12 50,10 Z;
+            M50,12 C74,12 88,30 88,50 C88,70 72,88 50,88 C28,88 12,70 12,50 C12,30 26,12 50,12 Z"/>
+      </path>
+    </svg>
+  </div>
+
+  <!-- 6 -->
+  <div class="cell"><div class="l6"><div class="head"></div><div class="drop"></div></div></div>
+
+  <!-- 7 -->
+  <div class="cell"><div class="l7"><i class="a"></i><i class="b"></i></div></div>
+
+  <!-- 8 -->
+  <div class="cell"><div class="l8"></div></div>
+
+  <!-- 9 -->
+  <div class="cell"><div class="l9"><i></i><i></i><i></i></div></div>
+
+  <!-- 10 -->
+  <div class="cell"><div class="l10"><div class="core"></div><div class="sat"></div></div></div>
+
+  <!-- 11: Turbulent wobbling disc -->
+  <div class="cell">
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      <g filter="url(#turb11)"><circle cx="80" cy="80" r="44" fill="#111"/></g>
+    </svg>
+  </div>
+
+  <!-- 12: Turbulent blob w/ rotation -->
+  <div class="cell">
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      <g filter="url(#turb12)">
+        <ellipse cx="80" cy="80" rx="48" ry="40" fill="#111">
+          <animateTransform attributeName="transform" type="rotate"
+            from="0 80 80" to="360 80 80" dur="8s" repeatCount="indefinite"/>
+        </ellipse>
+      </g>
+    </svg>
+  </div>
+
+  <!-- 13: Turbulent ring -->
+  <div class="cell">
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      <g filter="url(#turb13)">
+        <circle cx="80" cy="80" r="50" fill="none" stroke="#111" stroke-width="10"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- 14 -->
+  <div class="cell"><div class="l14"></div></div>
+
+  <!-- 15 -->
+  <div class="cell"><div class="l15"><i></i><i></i><i></i></div></div>
+
+  <!-- 16: SVG filled amoeba morph with slow rotation -->
+  <div class="cell">
+    <svg width="140" height="140" viewBox="0 0 100 100">
+      <g style="transform-origin:50px 50px; animation: spin17 16s linear infinite;">
+        <path fill="#111">
+          <animate attributeName="d" dur="5s" repeatCount="indefinite"
+            values="
+              M50,15 C72,15 85,32 85,50 C85,70 70,85 50,85 C30,85 15,68 15,50 C15,30 30,15 50,15 Z;
+              M52,12 C78,18 88,38 82,58 C76,76 58,90 42,84 C22,78 10,56 16,38 C22,20 34,10 52,12 Z;
+              M48,16 C70,10 90,28 86,50 C82,72 64,90 44,82 C24,74 10,54 16,34 C22,20 32,18 48,16 Z;
+              M50,14 C74,16 90,34 84,54 C78,74 60,88 44,84 C22,78 12,58 16,38 C20,20 32,12 50,14 Z;
+              M50,15 C72,15 85,32 85,50 C85,70 70,85 50,85 C30,85 15,68 15,50 C15,30 30,15 50,15 Z"/>
+        </path>
+      </g>
+    </svg>
+  </div>
+
+  <!-- 17 -->
+  <div class="cell">
+    <div class="l17" id="l17-host"></div>
+  </div>
+
+  <!-- 18 -->
+  <div class="cell"><div class="l18"><i class="a"></i><i class="b"></i></div></div>
+
+  <!-- 19 -->
+  <div class="cell">
+    <div class="l19"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <!-- 20 -->
+  <div class="cell">
+    <div class="l20">
+      <div class="bell"></div>
+      <div class="leg"></div><div class="leg"></div><div class="leg"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Populate loader 17: dotted swirl (dots along an Archimedean spiral)
+  (function(){
+    const host = document.getElementById('l17-host');
+    const N = 22;
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      const angle = t * Math.PI * 3.2;
+      const r = 8 + t * 58;
+      const x = Math.cos(angle) * r;
+      const y = Math.sin(angle) * r;
+      const size = 4 + (1 - t) * 10;
+      const dot = document.createElement('i');
+      dot.style.width = dot.style.height = size + 'px';
+      dot.style.marginLeft = (-size/2) + 'px';
+      dot.style.marginTop  = (-size/2) + 'px';
+      dot.style.transform = `translate(${x}px, ${y}px)`;
+      dot.style.opacity = 0.25 + (1 - t) * 0.75;
+      host.appendChild(dot);
+    }
+  })();
+</script>
+
+</body>
+</html>

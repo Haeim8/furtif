@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FURTIF — Booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#F4F2ED; --bg-2:#EDEAE3; --ink:#0A0A0A; --mute:#8A8A85;
+    --line:#0A0A0A1a; --accent:#D4412A;
+    --sans:"Inter Tight", ui-sans-serif, system-ui, sans-serif;
+    --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  button,input,select{font-family:inherit;color:inherit}
+  button{cursor:pointer;border:none;background:none}
+  ::selection{background:var(--ink);color:var(--bg)}
+
+  /* ——— top bar ——— */
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:18px 28px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--bg);z-index:10
+  }
+  .mark{font-weight:800;font-size:16px;letter-spacing:.24em}
+  .mark .dot{display:inline-block;width:5px;height:5px;background:var(--accent);border-radius:50%;margin-left:6px;vertical-align:2px}
+  .back{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);display:flex;align-items:center;gap:8px;transition:color .2s}
+  .back:hover{color:var(--ink)}
+  .back .arr{display:inline-block;transform:translateX(0);transition:transform .2s}
+  .back:hover .arr{transform:translateX(-4px)}
+
+  /* ——— breadcrumb / steps ——— */
+  .steps{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+    border-bottom:1px solid var(--line);
+  }
+  .steps .step{
+    padding:24px 32px;display:flex;align-items:center;gap:14px;
+    border-right:1px solid var(--line);position:relative
+  }
+  .steps .step:last-child{border-right:none}
+  .step .n{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mute);width:28px}
+  .step .lbl{display:flex;flex-direction:column;gap:2px}
+  .step .lbl .t{font-family:var(--sans);font-size:15px;font-weight:500;letter-spacing:-.01em}
+  .step .lbl .s{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:.12em}
+  .step.done .n, .step.done .lbl .s{color:var(--accent)}
+  .step.on{background:var(--ink);color:var(--bg)}
+  .step.on .n{color:var(--bg);opacity:.6}
+  .step.on .lbl .s{color:#aaa}
+
+  /* ——— layout ——— */
+  .shell{display:grid;grid-template-columns:1.4fr 1fr;min-height:calc(100vh - 128px)}
+  .form{padding:56px 48px;border-right:1px solid var(--line)}
+  .rail{padding:56px 48px;background:var(--ink);color:var(--bg);display:flex;flex-direction:column;justify-content:space-between}
+
+  /* ——— form header ——— */
+  .form-head{margin-bottom:48px}
+  .form-head .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin-bottom:12px}
+  .form-head h1{font-size:clamp(48px,6vw,88px);font-weight:500;letter-spacing:-.04em;line-height:.9}
+  .form-head h1 em{font-style:italic;color:var(--mute);font-weight:300}
+
+  /* ——— selected item card ——— */
+  .sel-card{
+    display:grid;grid-template-columns:1fr 1.6fr;gap:24px;
+    border:1px solid var(--line);padding:24px;margin-bottom:40px;background:#fff
+  }
+  .sel-card .visual{
+    aspect-ratio:16/10;background:
+      repeating-linear-gradient(135deg,#0A0A0A08 0 2px, transparent 2px 10px), var(--bg-2);
+    border:1px solid var(--line);display:grid;place-items:center;color:var(--mute);
+    font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase
+  }
+  .sel-card .info{display:flex;flex-direction:column;justify-content:space-between;gap:12px}
+  .sel-card .tag{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute)}
+  .sel-card h3{font-size:clamp(26px,3vw,40px);font-weight:500;letter-spacing:-.02em;line-height:1;margin-top:4px}
+  .sel-card .specs{display:flex;gap:20px;margin-top:8px;flex-wrap:wrap}
+  .sel-card .specs .sp{display:flex;flex-direction:column}
+  .sel-card .specs .k{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+  .sel-card .specs .v{font-family:var(--sans);font-size:18px;font-weight:500;letter-spacing:-.01em}
+  .change-link{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--line);padding-bottom:2px;align-self:flex-start}
+  .change-link:hover{color:var(--ink);border-color:var(--ink)}
+
+  /* ——— fields ——— */
+  .section-title{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin:36px 0 16px;display:flex;align-items:center;gap:12px}
+  .section-title::before{content:"";width:14px;height:1px;background:var(--mute)}
+
+  .field{padding:20px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:start}
+  .field .label{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);padding-top:6px}
+  .field .control input, .field .control select{
+    width:100%;border:none;background:transparent;font-family:var(--sans);font-size:20px;font-weight:500;letter-spacing:-.01em;
+    padding:4px 0;outline:none;border-bottom:1px solid transparent;transition:border-color .15s
+  }
+  .field .control input:focus{border-color:var(--ink)}
+  .field .inline{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    padding:10px 14px;border:1px solid var(--line);background:var(--bg);
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);
+    cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px
+  }
+  .chip .price{color:var(--ink);opacity:.6}
+  .chip:hover{border-color:var(--ink);color:var(--ink)}
+  .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .chip.on .price{color:var(--bg);opacity:1}
+  .chip.disabled{opacity:.3;cursor:not-allowed;text-decoration:line-through}
+
+  /* ——— calendar ——— */
+  .cal{border:1px solid var(--line);background:#fff;padding:18px}
+  .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+  .cal-head button{padding:4px 10px;border:1px solid var(--line)}
+  .cal-head button:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .cal-grid .dh{background:var(--bg);padding:8px;font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);text-align:center}
+  .cal-grid .dc{
+    background:#fff;padding:12px 6px;min-height:44px;font-family:var(--mono);font-size:13px;
+    text-align:center;cursor:pointer;transition:all .15s;position:relative
+  }
+  .cal-grid .dc:hover{background:var(--bg-2)}
+  .cal-grid .dc.muted{color:var(--line);cursor:default;background:#fafaf7}
+  .cal-grid .dc.busy{background:#fafaf7;color:#ccc;cursor:not-allowed}
+  .cal-grid .dc.busy::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent 0 4px,#0A0A0A0a 4px 5px)}
+  .cal-grid .dc.on{background:var(--ink);color:var(--bg)}
+  .cal-grid .dc.range{background:#0A0A0A12}
+
+  /* ——— options / extras ——— */
+  .opt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .opt{
+    display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;
+    padding:16px 18px;border:1px solid var(--line);background:var(--bg);cursor:pointer;transition:all .15s
+  }
+  .opt:hover{border-color:var(--ink)}
+  .opt .ck{width:16px;height:16px;border:1px solid var(--ink);display:grid;place-items:center}
+  .opt .ck::after{content:"✓";font-size:11px;opacity:0;transition:opacity .15s}
+  .opt.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .opt.on .ck{border-color:var(--bg)}
+  .opt.on .ck::after{opacity:1;color:var(--bg)}
+  .opt .nm{font-family:var(--sans);font-size:15px;font-weight:500;letter-spacing:-.01em}
+  .opt .nm small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--mute);font-weight:400;margin-top:2px;text-transform:uppercase}
+  .opt.on .nm small{color:#999}
+  .opt .pr{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+
+  /* ——— rail summary ——— */
+  .rail .tag{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#888;margin-bottom:14px}
+  .rail h2{font-size:44px;font-weight:500;letter-spacing:-.03em;line-height:.95;margin-bottom:8px}
+  .rail h2 em{font-style:italic;color:#888;font-weight:300}
+  .rail .subservice{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:#aaa;margin-bottom:32px;text-transform:uppercase}
+
+  .sum-line{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-top:1px solid #ffffff1a;font-family:var(--mono);font-size:12px;color:#aaa;gap:20px}
+  .sum-line b{color:#fff;font-weight:500;font-family:var(--sans);font-size:15px;letter-spacing:-.01em}
+  .sum-line small{display:block;font-size:10px;color:#666;letter-spacing:.12em;margin-top:2px}
+
+  .divider{height:1px;background:#ffffff22;margin:18px 0}
+
+  .total-block{margin-top:24px;padding-top:24px;border-top:1px solid #ffffff44}
+  .total-block .k{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#888}
+  .total-block .v{font-family:var(--sans);font-size:76px;font-weight:500;letter-spacing:-.04em;line-height:1;margin-top:8px}
+  .total-block .v small{font-family:var(--mono);font-size:16px;color:#888;font-weight:400;margin-left:4px;letter-spacing:.05em}
+
+  .cta-book{
+    margin-top:28px;width:100%;padding:24px 28px;background:var(--bg);color:var(--ink);
+    font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;
+    display:flex;justify-content:space-between;align-items:center;transition:all .2s
+  }
+  .cta-book:hover{background:var(--accent);color:var(--bg)}
+  .cta-book .ar{font-size:18px}
+  .disclaim{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:#666;margin-top:14px;text-transform:uppercase;line-height:1.6}
+
+  /* ——— light-specific config ——— */
+  .tint-config{border:1px solid var(--line);padding:24px;background:#fff;margin-top:12px}
+  .tint-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:end;margin-bottom:24px}
+  .tint-row:last-child{margin-bottom:0}
+  .tint-row .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin-bottom:10px}
+  .tint-row .v{font-family:var(--sans);font-size:44px;font-weight:500;letter-spacing:-.03em;line-height:1}
+  .tint-row .v small{font-family:var(--mono);font-size:12px;color:var(--mute);margin-left:4px;font-weight:400}
+  .tint-row input[type="range"]{width:100%;-webkit-appearance:none;background:transparent}
+  .tint-row input[type="range"]::-webkit-slider-runnable-track{height:2px;background:var(--line)}
+  .tint-row input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ink);margin-top:-6px;cursor:pointer}
+  .tint-row input[type="range"]::-moz-range-track{height:2px;background:var(--line)}
+  .tint-row input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:none;cursor:pointer}
+
+  .preview-strip{
+    height:80px;margin-top:8px;border:1px solid var(--line);position:relative;overflow:hidden;
+    background:linear-gradient(180deg,#9ab5d0,#1a2840)
+  }
+  .preview-strip .ovr{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .3s}
+  .preview-strip .lbl{position:absolute;left:12px;bottom:10px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:#fff;text-transform:uppercase;z-index:2;mix-blend-mode:difference}
+
+  /* not-applicable: hide Car-only or Wash-only fields */
+  [data-show]{display:none}
+  body[data-svc="car"] [data-show~="car"]{display:grid}
+  body[data-svc="wash"] [data-show~="wash"]{display:grid}
+  body[data-svc="light"] [data-show~="light"]{display:grid}
+  body[data-svc="car"] [data-show~="car-flex"],
+  body[data-svc="wash"] [data-show~="wash-flex"],
+  body[data-svc="light"] [data-show~="light-flex"]{display:block}
+
+  @media (max-width: 900px){
+    .shell{grid-template-columns:1fr}
+    .rail{order:2}
+    .form,.rail{padding:32px 20px}
+    .steps{grid-template-columns:repeat(2,1fr)}
+    .steps .step{padding:16px 18px}
+    .field{grid-template-columns:1fr;gap:8px}
+    .sel-card{grid-template-columns:1fr}
+    .opt-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body data-svc="car">
+
+<div class="topbar">
+  <a class="back" href="Furtif.html"><span class="arr">←</span>Retour — index</a>
+  <div class="mark">FURTIF<span class="dot"></span></div>
+  <div class="back" style="color:var(--mute)">Booking · <span id="svcTag">Furtif Car</span></div>
+</div>
+
+<div class="steps">
+  <div class="step done"><span class="n">01</span><span class="lbl"><span class="t">Service</span><span class="s">— choisi</span></span></div>
+  <div class="step done"><span class="n">02</span><span class="lbl"><span class="t" id="stp2">Véhicule</span><span class="s">— choisi</span></span></div>
+  <div class="step on"><span class="n">03</span><span class="lbl"><span class="t">Date &amp; détails</span><span class="s">— en cours</span></span></div>
+  <div class="step"><span class="n">04</span><span class="lbl"><span class="t">Paiement</span><span class="s">— Stripe 3DS</span></span></div>
+</div>
+
+<div class="shell">
+  <div class="form">
+    <div class="form-head">
+      <div class="eyebrow">— Étape 03 · Détails de votre <span id="svcEye">location</span></div>
+      <h1 id="formTitle">Confirmez <em>les détails.</em></h1>
+    </div>
+
+    <!-- selected item -->
+    <div class="sel-card">
+      <div class="visual" id="visual">[ visuel · voiture ]</div>
+      <div class="info">
+        <div>
+          <div class="tag" id="selTag">— Véhicule sélectionné</div>
+          <h3 id="selName">Porsche 911 GT3</h3>
+          <div class="specs" id="selSpecs">
+            <div class="sp"><span class="k">Puissance</span><span class="v">510 ch</span></div>
+            <div class="sp"><span class="k">0 → 100</span><span class="v">3.4 s</span></div>
+            <div class="sp"><span class="k">Tarif</span><span class="v">890 CAD / jour</span></div>
+          </div>
+        </div>
+        <a class="change-link" id="changeLink" href="Furtif.html#act-car">Changer de véhicule →</a>
+      </div>
+    </div>
+
+    <!-- DATES -->
+    <div class="section-title">Créneau</div>
+
+    <!-- Car: plage de dates -->
+    <div class="field" data-show="car">
+      <div class="label">Dates<br/>de location</div>
+      <div class="control">
+        <div class="inline">
+          <div>
+            <input type="date" id="dStart" value="2026-05-02"/>
+            <div style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--mute);margin-top:4px;text-transform:uppercase">Pick-up · 10:00</div>
+          </div>
+          <div>
+            <input type="date" id="dEnd" value="2026-05-05"/>
+            <div style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--mute);margin-top:4px;text-transform:uppercase">Retour · 18:00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wash/Light: calendrier + créneau -->
+    <div class="field" data-show="wash light">
+      <div class="label">Jour</div>
+      <div class="control">
+        <div class="cal">
+          <div class="cal-head">
+            <button>‹</button>
+            <div id="calMonth">MAI · 2026</div>
+            <button>›</button>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field" data-show="wash light">
+      <div class="label">Créneau</div>
+      <div class="control">
+        <div class="chip-row" id="slotRow">
+          <div class="chip">08:00</div>
+          <div class="chip on">10:30</div>
+          <div class="chip">13:00</div>
+          <div class="chip disabled">15:30</div>
+          <div class="chip">17:00</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--mute);margin-top:10px;text-transform:uppercase">
+          Durée estimée · <span id="durEst">2h30</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIGHT config -->
+    <div class="field" data-show="light">
+      <div class="label">Configuration<br/>vitres</div>
+      <div class="control" style="display:block">
+        <div class="tint-config">
+          <div class="tint-row">
+            <div>
+              <div class="k">VLT · teinte</div>
+              <div class="v"><span id="vltVal">35</span><small>%</small></div>
+            </div>
+            <input type="range" id="vlt" min="5" max="70" value="35" step="5"/>
+          </div>
+          <div class="tint-row" style="grid-template-columns:1fr;gap:8px">
+            <div class="preview-strip"><div class="ovr" id="ovr"></div><div class="lbl">— aperçu teinte</div></div>
+          </div>
+          <div class="tint-row" style="grid-template-columns:1fr;gap:8px">
+            <div>
+              <div class="k">Ciel étoilé</div>
+              <div class="chip-row" style="margin-top:8px" id="skyRow">
+                <div class="chip">Aucun <span class="price">·</span></div>
+                <div class="chip">Classique <span class="price">800 $</span></div>
+                <div class="chip on">Galaxie · 400 pts <span class="price">1 200 $</span></div>
+                <div class="chip">Cosmos · 800 pts <span class="price">1 800 $</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="tint-row" style="grid-template-columns:1fr;gap:8px">
+            <div>
+              <div class="k">Couverture vitres</div>
+              <div class="chip-row" style="margin-top:8px" id="covRow">
+                <div class="chip">Avant · 2 <span class="price">450 $</span></div>
+                <div class="chip on">Intégral · 4 <span class="price">890 $</span></div>
+                <div class="chip">Pano + intégral <span class="price">1 390 $</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VÉHICULE CLIENT (pour wash/light) -->
+    <div class="field" data-show="wash light">
+      <div class="label">Votre véhicule</div>
+      <div class="control">
+        <div class="inline">
+          <input placeholder="Marque · modèle (ex: Audi Q5)"/>
+          <input placeholder="Immatriculation"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="section-title">Options</div>
+
+    <div class="field">
+      <div class="label">Extras</div>
+      <div class="control">
+        <div class="opt-grid" id="optGrid" data-show="car-flex" style="display:grid">
+          <div class="opt on" data-p="0"><div class="ck"></div><div class="nm">Pickup atelier<small>Inclus</small></div><div class="pr">0 $</div></div>
+          <div class="opt" data-p="50"><div class="ck"></div><div class="nm">Livraison à domicile<small>≤ 20 km</small></div><div class="pr">+ 50 $</div></div>
+          <div class="opt" data-p="180"><div class="ck"></div><div class="nm">Conducteur additionnel<small>Par séjour</small></div><div class="pr">+ 180 $</div></div>
+          <div class="opt" data-p="240"><div class="ck"></div><div class="nm">Assurance premium<small>Franchise 0 $</small></div><div class="pr">+ 240 $</div></div>
+        </div>
+        <div class="opt-grid" data-show="wash-flex" style="display:none">
+          <div class="opt on" data-p="0"><div class="ck"></div><div class="nm">Pickup domicile<small>≤ 15 km inclus</small></div><div class="pr">0 $</div></div>
+          <div class="opt" data-p="60"><div class="ck"></div><div class="nm">Décontamination fer<small>Complément</small></div><div class="pr">+ 60 $</div></div>
+          <div class="opt" data-p="120"><div class="ck"></div><div class="nm">Traitement cuir<small>Nourrit + protège</small></div><div class="pr">+ 120 $</div></div>
+          <div class="opt" data-p="40"><div class="ck"></div><div class="nm">Parfum intérieur<small>Durée 60 jours</small></div><div class="pr">+ 40 $</div></div>
+        </div>
+        <div class="opt-grid" data-show="light-flex" style="display:none">
+          <div class="opt on" data-p="0"><div class="ck"></div><div class="nm">Dépose véhicule atelier<small>Inclus</small></div><div class="pr">0 $</div></div>
+          <div class="opt" data-p="150"><div class="ck"></div><div class="nm">Véhicule de courtoisie<small>Durée prestation</small></div><div class="pr">+ 150 $</div></div>
+          <div class="opt" data-p="90"><div class="ck"></div><div class="nm">Film anti-UV renforcé<small>Supplément</small></div><div class="pr">+ 90 $</div></div>
+          <div class="opt" data-p="0"><div class="ck"></div><div class="nm">Garantie 10 ans<small>Au lieu de 5</small></div><div class="pr">+ 200 $</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDENTITÉ -->
+    <div class="section-title">Identité</div>
+
+    <div class="field">
+      <div class="label">Nom complet</div>
+      <div class="control"><input placeholder="Prénom · Nom"/></div>
+    </div>
+    <div class="field">
+      <div class="label">Email</div>
+      <div class="control"><input type="email" placeholder="vous@domaine.com"/></div>
+    </div>
+    <div class="field">
+      <div class="label">Téléphone</div>
+      <div class="control"><input placeholder="+1 (514) ···"/></div>
+    </div>
+  </div>
+
+  <!-- RAIL -->
+  <div class="rail">
+    <div>
+      <div class="tag">— Récapitulatif</div>
+      <h2 id="railTitle">Furtif Car</h2>
+      <div class="subservice" id="railSub">Porsche 911 GT3</div>
+
+      <div class="sum-line">
+        <div>Base <small id="baseSub">3 jours × 890 $</small></div>
+        <b id="sumBase">2 670,00 $</b>
+      </div>
+      <div class="sum-line">
+        <div>Options <small id="optCount">1 sélection</small></div>
+        <b id="sumOpts">0,00 $</b>
+      </div>
+      <div class="sum-line">
+        <div>TPS / TVQ <small>14.975 %</small></div>
+        <b id="sumTax">400,03 $</b>
+      </div>
+      <div class="divider"></div>
+      <div class="sum-line">
+        <div>Dépôt garantie <small>remboursable</small></div>
+        <b id="sumDep">500,00 $</b>
+      </div>
+    </div>
+
+    <div>
+      <div class="total-block">
+        <div class="k">Total à payer · CAD</div>
+        <div class="v" id="sumTotal">3 570<small>,03</small></div>
+      </div>
+      <button class="cta-book">
+        <span>Payer &amp; réserver</span>
+        <span class="ar">→</span>
+      </button>
+      <div class="disclaim">
+        Paiement sécurisé · Stripe 3DS<br/>
+        Confirmation sous 2h ouvrées · Annulation gratuite 48h avant
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* —— data —— */
+const MODELS = [
+  {name:"Porsche 911 GT3", hp:"510 ch", accel:"3.4 s", price:"890 CAD / jour", rate:890},
+  {name:"Tesla Model S Plaid", hp:"1020 ch", accel:"2.1 s", price:"720 CAD / jour", rate:720},
+  {name:"Range Rover Sport", hp:"530 ch", accel:"4.5 s", price:"620 CAD / jour", rate:620},
+  {name:"Mercedes G63 AMG", hp:"585 ch", accel:"4.5 s", price:"950 CAD / jour", rate:950},
+  {name:"BMW M4 Competition", hp:"530 ch", accel:"3.5 s", price:"540 CAD / jour", rate:540},
+  {name:"Lamborghini Urus", hp:"666 ch", accel:"3.3 s", price:"1 450 CAD / jour", rate:1450},
+  {name:"Audi RS6 Avant", hp:"630 ch", accel:"3.4 s", price:"680 CAD / jour", rate:680},
+];
+const WASH = [
+  {name:"Express", sub:"Ext · aspiration", dur:"45 min", price:75},
+  {name:"Signature", sub:"Ext / Int complet", dur:"2h30", price:180},
+  {name:"Deep clean", sub:"Shampoing sièges · moquettes", dur:"4h", price:320},
+  {name:"Ceramic", sub:"Protection 3 ans", dur:"1 jour", price:890},
+  {name:"Concours", sub:"Polish + correction", dur:"2 jours", price:1450},
+];
+
+/* —— params —— */
+const params = new URLSearchParams(location.search);
+const svc = params.get('svc') || 'car';
+document.body.dataset.svc = svc;
+
+const SVC_LABELS = {car:"Furtif Car", wash:"Furtif Wash", light:"Furtif Light"};
+const SVC_EYE = {car:"location", wash:"prestation detailing", light:"prestation vitres"};
+document.getElementById('svcTag').textContent = SVC_LABELS[svc];
+document.getElementById('svcEye').textContent = SVC_EYE[svc];
+document.getElementById('railTitle').textContent = SVC_LABELS[svc];
+
+/* —— populate selected item —— */
+const visual = document.getElementById('visual');
+const selTag = document.getElementById('selTag');
+const selName = document.getElementById('selName');
+const selSpecs = document.getElementById('selSpecs');
+const changeLink = document.getElementById('changeLink');
+const stp2 = document.getElementById('stp2');
+const railSub = document.getElementById('railSub');
+const baseSub = document.getElementById('baseSub');
+
+let baseRate = 0;
+let baseDays = 3;
+let depositAmt = 0;
+
+if(svc === 'car'){
+  const i = +(params.get('model') || 0);
+  const m = MODELS[i];
+  selTag.textContent = '— Véhicule sélectionné';
+  selName.textContent = m.name;
+  selSpecs.innerHTML = `
+    <div class="sp"><span class="k">Puissance</span><span class="v">${m.hp}</span></div>
+    <div class="sp"><span class="k">0 → 100</span><span class="v">${m.accel}</span></div>
+    <div class="sp"><span class="k">Tarif</span><span class="v">${m.price}</span></div>`;
+  visual.textContent = `[ ${m.name} · photo 3/4 ]`;
+  changeLink.href = 'Furtif.html#act-car';
+  changeLink.textContent = 'Changer de véhicule →';
+  stp2.textContent = 'Véhicule';
+  railSub.textContent = m.name;
+  baseRate = m.rate;
+  baseDays = 3;
+  baseSub.textContent = `${baseDays} jours × ${m.rate} $`;
+  depositAmt = 500;
+} else if(svc === 'wash'){
+  const i = +(params.get('tier') || 0);
+  const w = WASH[i];
+  selTag.textContent = '— Prestation sélectionnée';
+  selName.textContent = w.name;
+  selSpecs.innerHTML = `
+    <div class="sp"><span class="k">Type</span><span class="v">${w.sub}</span></div>
+    <div class="sp"><span class="k">Durée</span><span class="v">${w.dur}</span></div>
+    <div class="sp"><span class="k">Tarif</span><span class="v">${w.price} CAD</span></div>`;
+  visual.textContent = `[ ${w.name} · visuel prestation ]`;
+  changeLink.href = 'Furtif.html#act-wash';
+  changeLink.textContent = 'Changer de prestation →';
+  stp2.textContent = 'Prestation';
+  railSub.textContent = w.name;
+  baseRate = w.price;
+  baseSub.textContent = `${w.sub} · ${w.dur}`;
+  document.getElementById('durEst').textContent = w.dur;
+  depositAmt = 0;
+} else {
+  selTag.textContent = '— Prestation sélectionnée';
+  selName.textContent = 'Furtif Light · Cabine';
+  selSpecs.innerHTML = `
+    <div class="sp"><span class="k">Vitres</span><span class="v">Intégral</span></div>
+    <div class="sp"><span class="k">Ciel</span><span class="v">Galaxie 400 pts</span></div>
+    <div class="sp"><span class="k">Garantie</span><span class="v">5 ans</span></div>`;
+  visual.textContent = `[ cabine · vitres + ciel étoilé ]`;
+  changeLink.href = 'Furtif.html#act-light';
+  changeLink.textContent = 'Revoir la configuration →';
+  stp2.textContent = 'Configuration';
+  railSub.textContent = 'Intégral + Ciel étoilé';
+  baseRate = 890 + 1200; // défaut intégral + galaxie
+  baseSub.textContent = 'Intégral 890 $ + Ciel 1 200 $';
+  depositAmt = 0;
+}
+
+/* —— options —— */
+document.querySelectorAll('.opt').forEach(o=>{
+  o.addEventListener('click',()=>{
+    o.classList.toggle('on');
+    recalc();
+  });
+});
+/* —— chips single-select rows —— */
+['slotRow','skyRow','covRow'].forEach(id=>{
+  const row = document.getElementById(id);
+  if(!row) return;
+  row.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      if(c.classList.contains('disabled')) return;
+      row.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      if(id==='skyRow' || id==='covRow') recalc();
+    });
+  });
+});
+
+/* —— tint slider (light) —— */
+const vlt = document.getElementById('vlt');
+const vltVal = document.getElementById('vltVal');
+const ovr = document.getElementById('ovr');
+if(vlt){
+  const upd = ()=>{
+    vltVal.textContent = vlt.value;
+    ovr.style.opacity = ((70 - +vlt.value) / 70 * 0.78).toFixed(2);
+  };
+  vlt.addEventListener('input', upd); upd();
+}
+
+/* —— dates (car) —— */
+const dStart = document.getElementById('dStart');
+const dEnd = document.getElementById('dEnd');
+function daysBetween(){
+  if(!dStart || !dEnd) return baseDays;
+  const a = new Date(dStart.value), b = new Date(dEnd.value);
+  return Math.max(1, Math.round((b-a)/86400000));
+}
+if(dStart){ dStart.addEventListener('change', recalc); dEnd.addEventListener('change', recalc); }
+
+/* —— calendar (wash/light) —— */
+const calGrid = document.getElementById('calGrid');
+if(calGrid){
+  const dh = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+  dh.forEach(d=>{ const e=document.createElement('div'); e.className='dh'; e.textContent=d; calGrid.appendChild(e); });
+  // fake month of mai 2026 — 1 mai = vendredi => offset 4 (Lu=0)
+  const offset = 4; const daysInMonth = 31;
+  const busy = new Set([3,4,10,11,17,18,24,25]); // dimanches + samedi 10
+  for(let i=0;i<offset;i++){const e=document.createElement('div');e.className='dc muted';calGrid.appendChild(e);}
+  for(let d=1; d<=daysInMonth; d++){
+    const e=document.createElement('div'); e.className='dc'; e.textContent = d;
+    if(busy.has(d)) e.classList.add('busy');
+    if(d===12) e.classList.add('on');
+    e.addEventListener('click',()=>{
+      if(e.classList.contains('busy')||e.classList.contains('muted')) return;
+      calGrid.querySelectorAll('.dc').forEach(x=>x.classList.remove('on'));
+      e.classList.add('on');
+    });
+    calGrid.appendChild(e);
+  }
+}
+
+/* —— sum formatting + recalc —— */
+function fmt(n){return n.toLocaleString('fr-CA',{minimumFractionDigits:2, maximumFractionDigits:2})}
+function recalc(){
+  let base = baseRate;
+  if(svc === 'car') base = baseRate * daysBetween();
+  // light: base = cov + sky
+  if(svc === 'light'){
+    const covChip = document.querySelector('#covRow .chip.on');
+    const skyChip = document.querySelector('#skyRow .chip.on');
+    const covPrice = covChip ? parseInt((covChip.querySelector('.price').textContent.match(/\d[\d\s]*/)||['0'])[0].replace(/\s/g,'')) : 0;
+    const skyPrice = skyChip ? parseInt((skyChip.querySelector('.price').textContent.match(/\d[\d\s]*/)||['0'])[0].replace(/\s/g,'')) : 0;
+    base = covPrice + skyPrice;
+    baseSub.textContent = `${covChip?.childNodes[0].textContent.trim() || ''} + ${skyChip?.childNodes[0].textContent.trim() || ''}`;
+  }
+  if(svc === 'car') baseSub.textContent = `${daysBetween()} jours × ${baseRate} $`;
+
+  let opts = 0, optN = 0;
+  document.querySelectorAll('.opt-grid').forEach(g=>{
+    if(g.offsetParent === null) return;
+    g.querySelectorAll('.opt.on').forEach(o=>{ opts += +o.dataset.p; optN++; });
+  });
+
+  const tax = (base + opts) * 0.14975;
+  const total = base + opts + tax + depositAmt;
+
+  document.getElementById('sumBase').textContent = fmt(base) + ' $';
+  document.getElementById('sumOpts').textContent = fmt(opts) + ' $';
+  document.getElementById('sumTax').textContent = fmt(tax) + ' $';
+  document.getElementById('optCount').textContent = `${optN} sélection${optN>1?'s':''}`;
+  document.getElementById('sumDep').textContent = fmt(depositAmt) + ' $';
+  const [intP, decP] = fmt(total).split(',');
+  document.getElementById('sumTotal').innerHTML = `${intP}<small>,${decP}</small>`;
+
+  // hide deposit line if 0
+  document.getElementById('sumDep').parentElement.style.display = depositAmt ? 'flex' : 'none';
+}
+recalc();
+</script>
+</body>
+</html>
