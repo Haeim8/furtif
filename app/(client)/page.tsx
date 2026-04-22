@@ -25,7 +25,7 @@ export default function FurtifPage() {
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#F4F2ED]">
         <OrganicLoader />
         <div className="mt-8 font-mono text-[10px] tracking-[0.3em] uppercase text-[#8A8A85]">
-          Chargement de l'expérience Furtif
+          Chargement de l&apos;expérience Furtif
         </div>
       </div>
     );

@@ -90,7 +90,7 @@ export default function LoginPage() {
           {/* Header */}
           <div className="mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-medium tracking-tight mb-3">Bienvenue<span style={{ color: 'var(--accent, #D4412A)' }}>.</span></h1>
-            <p className="text-[#8A8A85] font-mono text-[11px] uppercase tracking-widest">Connectez-vous à l'Atelier</p>
+            <p className="text-[#8A8A85] font-mono text-[11px] uppercase tracking-widest">Connectez-vous à l&apos;Atelier</p>
           </div>
 
           {errorMsg && (
